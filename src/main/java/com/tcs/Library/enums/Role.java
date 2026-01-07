@@ -1,0 +1,6 @@
+package com.tcs.Library.enums;
+
+public enum Role {
+    USER,
+    ADMIN
+}
