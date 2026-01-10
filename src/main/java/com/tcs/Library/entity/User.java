@@ -32,15 +32,14 @@ public class User implements UserDetails {
     private LocalDate dateOfBirth;
     private String passwordHash;
     private String secretQuestion;
+    private boolean defaulter=false;
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "users_id"))
     @Enumerated(EnumType.STRING)
     @Column(name = "role")
     private Set<Role> roles = new HashSet<>();
-    @ElementCollection
-    @CollectionTable(name = "user_book_copies", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "book_copy_id")
-    private Set<Long> bookCopyId = new HashSet<>();
+    @OneToMany(mappedBy = "user")
+    private List<BookCopy> bookCopy = new ArrayList<>();
 
     @PrePersist
     public void generatePublicId() {

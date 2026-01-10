@@ -1,6 +1,7 @@
 package com.tcs.Library.entity;
 
 import java.nio.ByteBuffer;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import com.tcs.Library.enums.BookStatus;
 import jakarta.persistence.Column;
@@ -29,13 +30,15 @@ public class BookCopy {
     private Long id;
     @Column(name="copy_pub_id")
     private String copypubId;
+    private LocalDateTime issueTime;
+    private LocalDateTime returnTime;
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private BookStatus status = BookStatus.FIRST;
-    @ManyToOne(fetch=FetchType.EAGER)
+    @ManyToOne(fetch=FetchType.LAZY)
     @JoinColumn(name = "book_id")
     private Book book;
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;
 

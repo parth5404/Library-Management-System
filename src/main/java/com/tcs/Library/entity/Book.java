@@ -56,7 +56,7 @@ public class Book {
             inverseJoinColumns = @JoinColumn(name = "author_id"))
     private Set<Author> author = new HashSet<>();
     @OneToMany(mappedBy = "book")
-    private List<BookCopy> books = new ArrayList<>();
+    private List<BookCopy> booksCopy = new ArrayList<>();
 
 
     @PrePersist

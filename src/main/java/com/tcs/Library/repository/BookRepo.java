@@ -25,6 +25,7 @@ public interface BookRepo extends JpaRepository<Book, Long> {
 
     // )
     // List<Book> fuzzySearchBooks(String query);
+    boolean existsById(Long id);
     Optional<Book> findByPublicId(String publicId);
 }
 

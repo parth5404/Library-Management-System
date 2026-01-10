@@ -39,5 +39,15 @@ public class GlobalExceptionHandler {
                 .body("No User Found with this Id" + ex.getMessage());
     }
 
+    @ExceptionHandler(SameBookException.class)
+    public ResponseEntity<String> SameBookException(SameBookException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("Already borrowed this book with Id" + ex.getMessage());
+    }
+    @ExceptionHandler(UserDefaulterException.class)
+    public ResponseEntity<String> UserDefaulterException(UserDefaulterException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body("User has overdue books and is now a defaulter." + ex.getMessage());
+    }
 
 }
