@@ -22,7 +22,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.tcs.Library.enums.Role;
 import com.tcs.Library.filter.JwtAuthenticationFilter;
 
-
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
@@ -40,7 +39,6 @@ public class SecurityConfig {
         return path;
     }
 
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
 
@@ -55,11 +53,9 @@ public class SecurityConfig {
                         .requestMatchers(p("/user/search/**"), p("/author/register/**"))
                         .authenticated().anyRequest().authenticated());
 
-
         http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
-
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
@@ -71,11 +67,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedHeaders(List.of("*"));
-        // config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedOrigins(
-                List.of("http://127.0.0.1:5500", "http://localhost:5500"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+                List.of("http://127.0.0.1:5500", "http://localhost:5500",
+                        "http://localhost:4200", "http://127.0.0.1:4200"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Cache-Control"));
+        config.setExposedHeaders(List.of(
+                "Authorization",
+                "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration(p("/**"), config);
         return source;

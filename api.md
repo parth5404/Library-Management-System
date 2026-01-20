@@ -115,6 +115,17 @@ Register a new user account.
 }
 ```
 
+#### Error Response (400 Bad Request)
+
+```json
+{
+  "status": "ERROR",
+  "message": "User Already Exists / Validation Error Message",
+  "data": null,
+  "timestamp": "2026-01-17T12:05:00"
+}
+```
+
 ---
 
 ## Books
