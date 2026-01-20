@@ -1,0 +1,42 @@
+<div class="home-container">
+    <nav class="navbar">
+        <div class="nav-brand">
+            <span class="logo-icon">📚</span>
+            <span class="logo-text">LibraryMS</span>
+        </div>
+        <button class="logout-btn" (click)="logout()">
+            <span>🚪</span> Logout
+        </button>
+    </nav>
+
+    <main class="main-content">
+        <div class="welcome-card">
+            <div class="welcome-icon">🎉</div>
+            <h1>Welcome to LibraryMS!</h1>
+            <p>You have successfully logged in to your library account.</p>
+
+            <div class="info-cards">
+                <div class="info-card">
+                    <span class="card-icon">📖</span>
+                    <h3>Browse Books</h3>
+                    <p>Explore our vast collection of books</p>
+                </div>
+                <div class="info-card">
+                    <span class="card-icon">📋</span>
+                    <h3>My Borrowings</h3>
+                    <p>View your borrowed books</p>
+                </div>
+                <div class="info-card">
+                    <span class="card-icon">⭐</span>
+                    <h3>Favorites</h3>
+                    <p>Quick access to saved books</p>
+                </div>
+            </div>
+
+            <div class="status-message">
+                <span class="status-icon">✅</span>
+                <span>Authentication successful! JWT token stored.</span>
+            </div>
+        </div>
+    </main>
+</div>

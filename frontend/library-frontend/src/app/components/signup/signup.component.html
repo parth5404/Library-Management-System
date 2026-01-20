@@ -1,0 +1,217 @@
+<div class="auth-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="logo">
+                <span class="logo-icon">📚</span>
+                <h1>LibraryMS</h1>
+            </div>
+            <h2>Create Account</h2>
+            <p>Join our library community today</p>
+        </div>
+
+        <form (ngSubmit)="onSubmit()" class="auth-form">
+            @if (errorMessage) {
+            <div class="error-alert">
+                <span class="alert-icon">⚠️</span>
+                {{ errorMessage }}
+            </div>
+            }
+
+            @if (successMessage) {
+            <div class="success-alert">
+                <span class="alert-icon">✅</span>
+                {{ successMessage }}
+            </div>
+            }
+
+            <!-- Personal Information -->
+            <div class="form-section">
+                <h3 class="section-title">Personal Information</h3>
+
+                <div class="form-group" [class.has-error]="hasFieldError('customerName')">
+                    <label for="customerName">Full Name *</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">👤</span>
+                        <input type="text" id="customerName" [(ngModel)]="signupData.customerName" name="customerName"
+                            placeholder="John Doe" required [disabled]="isLoading" />
+                    </div>
+                    @if (hasFieldError('customerName')) {
+                    <span class="field-error">{{ getFieldError('customerName') }}</span>
+                    }
+                </div>
+
+                <div class="form-group" [class.has-error]="hasFieldError('email')">
+                    <label for="email">Email Address *</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📧</span>
+                        <input type="email" id="email" [(ngModel)]="signupData.email" name="email"
+                            placeholder="you@example.com" required [disabled]="isLoading" />
+                    </div>
+                    @if (hasFieldError('email')) {
+                    <span class="field-error">{{ getFieldError('email') }}</span>
+                    }
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half" [class.has-error]="hasFieldError('countryCode')">
+                        <label for="countryCode">Country Code</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">🌍</span>
+                            <input type="text" id="countryCode" [(ngModel)]="signupData.countryCode" name="countryCode"
+                                placeholder="+91" [disabled]="isLoading" />
+                        </div>
+                        @if (hasFieldError('countryCode')) {
+                        <span class="field-error">{{ getFieldError('countryCode') }}</span>
+                        }
+                    </div>
+                    <div class="form-group half" [class.has-error]="hasFieldError('mobileNumber')">
+                        <label for="mobileNumber">Mobile Number *</label>
+                        <div class="input-wrapper">
+                            <span class="input-icon">📱</span>
+                            <input type="tel" id="mobileNumber" [(ngModel)]="signupData.mobileNumber"
+                                name="mobileNumber" placeholder="9876543210" required [disabled]="isLoading" />
+                        </div>
+                        @if (hasFieldError('mobileNumber')) {
+                        <span class="field-error">{{ getFieldError('mobileNumber') }}</span>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group" [class.has-error]="hasFieldError('dateOfBirth')">
+                    <label for="dateOfBirth">Date of Birth *</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📅</span>
+                        <input type="date" id="dateOfBirth" [(ngModel)]="signupData.dateOfBirth" name="dateOfBirth"
+                            required [disabled]="isLoading" />
+                    </div>
+                    @if (hasFieldError('dateOfBirth')) {
+                    <span class="field-error">{{ getFieldError('dateOfBirth') }}</span>
+                    }
+                </div>
+            </div>
+
+            <!-- Address Information -->
+            <div class="form-section">
+                <h3 class="section-title">Address (Optional)</h3>
+
+                <div class="form-group" [class.has-error]="hasFieldError('address')">
+                    <label for="address">Address</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🏠</span>
+                        <input type="text" id="address" [(ngModel)]="signupData.address" name="address"
+                            placeholder="123 Main Street" [disabled]="isLoading" />
+                    </div>
+                    @if (hasFieldError('address')) {
+                    <span class="field-error">{{ getFieldError('address') }}</span>
+                    }
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group half">
+                        <label for="city">City</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="city" [(ngModel)]="signupData.city" name="city" placeholder="Mumbai"
+                                [disabled]="isLoading" />
+                        </div>
+                    </div>
+                    <div class="form-group half">
+                        <label for="state">State</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="state" [(ngModel)]="signupData.state" name="state"
+                                placeholder="Maharashtra" [disabled]="isLoading" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="pinCode">PIN Code</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">📍</span>
+                        <input type="text" id="pinCode" [(ngModel)]="signupData.pinCode" name="pinCode"
+                            placeholder="400001" [disabled]="isLoading" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Information -->
+            <div class="form-section">
+                <h3 class="section-title">Security</h3>
+
+                <div class="form-group" [class.has-error]="hasFieldError('password')">
+                    <label for="password">Password * <small class="hint">(8+ chars, A-Z, a-z, 0-9,
+                            special)</small></label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔒</span>
+                        <input [type]="showPassword ? 'text' : 'password'" id="password"
+                            [(ngModel)]="signupData.password" name="password" placeholder="Abc@1234" required
+                            minlength="8" [disabled]="isLoading" />
+                        <button type="button" class="toggle-password" (click)="togglePasswordVisibility('password')">
+                            {{ showPassword ? '🙈' : '👁️' }}
+                        </button>
+                    </div>
+                    @if (hasFieldError('password')) {
+                    <span class="field-error">{{ getFieldError('password') }}</span>
+                    }
+                </div>
+
+                <div class="form-group" [class.has-error]="hasFieldError('confirmPassword')">
+                    <label for="confirmPassword">Confirm Password *</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">🔐</span>
+                        <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword"
+                            [(ngModel)]="signupData.confirmPassword" name="confirmPassword" placeholder="••••••••"
+                            required [disabled]="isLoading" />
+                        <button type="button" class="toggle-password" (click)="togglePasswordVisibility('confirm')">
+                            {{ showConfirmPassword ? '🙈' : '👁️' }}
+                        </button>
+                    </div>
+                    @if (hasFieldError('confirmPassword')) {
+                    <span class="field-error">{{ getFieldError('confirmPassword') }}</span>
+                    }
+                </div>
+
+                <div class="form-group" [class.has-error]="hasFieldError('secretQuestion')">
+                    <label for="secretQuestion">Secret Question *</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">❓</span>
+                        <select id="secretQuestion" [(ngModel)]="signupData.secretQuestion" name="secretQuestion"
+                            required [disabled]="isLoading">
+                            <option value="">Select a question</option>
+                            @for (q of secretQuestions; track q.value) {
+                            <option [value]="q.value">{{ q.label }}</option>
+                            }
+                        </select>
+                    </div>
+                    @if (hasFieldError('secretQuestion')) {
+                    <span class="field-error">{{ getFieldError('secretQuestion') }}</span>
+                    }
+                </div>
+
+                <div class="form-group" [class.has-error]="hasFieldError('secretAnswer')">
+                    <label for="secretAnswer">Secret Answer *</label>
+                    <div class="input-wrapper">
+                        <span class="input-icon">💬</span>
+                        <input type="text" id="secretAnswer" [(ngModel)]="signupData.secretAnswer" name="secretAnswer"
+                            placeholder="Your answer" required [disabled]="isLoading" />
+                    </div>
+                    @if (hasFieldError('secretAnswer')) {
+                    <span class="field-error">{{ getFieldError('secretAnswer') }}</span>
+                    }
+                </div>
+            </div>
+
+            <button type="submit" class="submit-btn" [disabled]="isLoading" [class.loading]="isLoading">
+                @if (isLoading) {
+                <span class="spinner"></span>
+                Creating Account...
+                } @else {
+                Create Account
+                }
+            </button>
+
+            <div class="auth-footer">
+                <p>Already have an account? <a routerLink="/login">Sign in</a></p>
+            </div>
+        </form>
+    </div>
+</div>
