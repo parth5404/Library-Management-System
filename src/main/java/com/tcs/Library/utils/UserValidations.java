@@ -343,6 +343,7 @@ public class UserValidations {
     public static class FieldError {
         @Getter
         private final String field;
+        @Getter
         private final String message;
     }
 }

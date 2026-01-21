@@ -20,9 +20,9 @@ public class UserMapper {
         user.setMobileNumber(dto.getMobileNumber());
         user.setAddress(dto.getAddress());
         user.setDateOfBirth(dto.getDateOfBirth());
-        // user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        // Password will be hashed separately in AuthService
         user.setSecretQuestion(dto.getSecretQuestion());
-        user.setSecretAnswer(dto.getSecretAnswer());
+        // SecretAnswer will be hashed separately in AuthService
 
         return user;
     }

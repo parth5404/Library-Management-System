@@ -1,15 +1,36 @@
 package com.tcs.Library.error;
 
 import com.tcs.Library.dto.ApiResponse;
+import com.tcs.Library.dto.ValidationErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ValidationErrorResponse> handleValidationException(ValidationException ex) {
+        ValidationErrorResponse response = ValidationErrorResponse.of(
+                ex.getMessage(),
+                ex.getFieldErrors());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ValidationErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        Map<String, String> fieldErrors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+                .forEach(error -> fieldErrors.put(error.getField(), error.getDefaultMessage()));
+        ValidationErrorResponse response = ValidationErrorResponse.of("Validation failed", fieldErrors);
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
 
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ApiResponse<Void>> handleBadCredentials(BadCredentialsException ex) {
@@ -61,6 +82,30 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MaxBooksExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxBooksExceeded(MaxBooksExceededException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(ComplaintNotFoundException.class)
+    public ResponseEntity<ApiResponse<Void>> handleComplaintNotFound(ComplaintNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidComplaintActionException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidComplaintAction(InvalidComplaintActionException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(DuplicateAuthorException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDuplicateAuthor(DuplicateAuthorException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(InvalidBookOperationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleInvalidBookOperation(InvalidBookOperationException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ApiResponse.error(ex.getMessage()));
     }
