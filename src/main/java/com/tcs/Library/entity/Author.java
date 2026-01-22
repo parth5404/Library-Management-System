@@ -1,12 +1,17 @@
 package com.tcs.Library.entity;
 
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToMany;
-import jakarta.persistence.PrePersist;
+import jakarta.persistence.OneToMany;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -28,13 +33,17 @@ public class Author {
     @Column(name = "public_id", unique = true, nullable = false, updatable = false)
     private String publicId;
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "authors")
+    @JsonIgnore
     private List<Book> book;
 
-    @PrePersist
-    public void generatePublicId() {
-        if (publicId == null) {
-            publicId = java.util.UUID.randomUUID().toString();
-        }
+    /**
+     * Returns the count of books associated with this author.
+     * This is a computed property that is included in JSON responses.
+     */
+    @JsonProperty("bookCount")
+    public int getBookCount() {
+        return book != null ? book.size() : 0;
     }
 }
