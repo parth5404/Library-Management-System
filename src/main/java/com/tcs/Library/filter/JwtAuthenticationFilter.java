@@ -52,9 +52,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
                     if (jwtService.isTokenValid(jwt)) {
 
-                        UsernamePasswordAuthenticationToken authToken =
-                                new UsernamePasswordAuthenticationToken(userDetails, null,
-                                        userDetails.getAuthorities());
+                        UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                                userDetails, null,
+                                userDetails.getAuthorities());
 
                         authToken.setDetails(
                                 new WebAuthenticationDetailsSource().buildDetails(request));
@@ -67,7 +67,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
 
         } catch (Exception ex) {
-            // Optional: if token invalid/expired, you can return 401
+            // Add CORS headers to error response
+            response.setHeader("Access-Control-Allow-Origin", request.getHeader("Origin"));
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            response.setHeader("Access-Control-Allow-Headers",
+                    "Authorization, Content-Type, Accept, X-Requested-With, Cache-Control");
+            response.setHeader("Access-Control-Expose-Headers", "Authorization, Content-Type");
+
+            // Return 401 for invalid/expired token
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("""

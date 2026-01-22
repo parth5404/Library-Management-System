@@ -3,8 +3,6 @@ package com.tcs.Library.config;
 
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-//port org.springframework.boot.web.server.autoconfigure.ServerProperties.Reactive.Session;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -31,8 +29,6 @@ public class SecurityConfig {
     private CustomUserDetailService customUserDetailService;
     @Autowired
     private JwtAuthenticationFilter jwtFilter;
-    // @Value("${server.servlet.context-path}")
-    // private static String basePath;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -55,8 +51,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, p("/**")).permitAll()
                         // Public endpoints
                         .requestMatchers(p("/auth/**"), p("/h2-console/**"), p("/whoami/**")).permitAll()
-                        // Admin endpoints
-                        .requestMatchers(p("/admin/**")).hasRole(Role.ADMIN.name())
+                        // Admin endpoints - accessible by ADMIN and STAFF (specific restrictions via
+                        // method security)
+                        .requestMatchers(p("/admin/**")).hasAnyRole(Role.ADMIN.name(), Role.STAFF.name())
                         // Staff complaint endpoints (staff or admin)
                         .requestMatchers(p("/staff/**")).hasAnyRole(Role.STAFF.name(), Role.ADMIN.name())
                         // User and authenticated endpoints
@@ -82,12 +79,19 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        config.setAllowedHeaders(List.of("*"));
-        // config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedOrigins(
                 List.of("http://127.0.0.1:5500", "http://localhost:5500",
                         "http://localhost:4200", "http://127.0.0.1:4200"));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedHeaders(List.of(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "X-Requested-With",
+                "Cache-Control"));
+        config.setExposedHeaders(List.of(
+                "Authorization",
+                "Content-Type"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration(p("/**"), config);
         return source;
