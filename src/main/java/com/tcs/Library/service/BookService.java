@@ -63,45 +63,43 @@ public class BookService {
      */
     @Transactional
     public Book createBookWithAuthors(BookCreateRequest request) {
-        if (request.getAuthors() == null || request.getAuthors().isEmpty()) {
-            throw new NoAuthorFoundException("At least one author is required");
-        }
-
         Set<Author> authors = new HashSet<>();
 
-        for (BookCreateRequest.AuthorInfo authorInfo : request.getAuthors()) {
-            String email = authorInfo.getEmail();
-            String name = authorInfo.getName();
+        // 1. Resolve authors by Public IDs
+        if (request.getAuthorIds() != null && !request.getAuthorIds().isEmpty()) {
+            List<Author> existingAuthors = authorRepo.findByPublicIdIn(request.getAuthorIds());
+            if (existingAuthors.size() != request.getAuthorIds().size()) {
+                throw new NoAuthorFoundException("One or more author Public IDs are invalid");
+            }
+            authors.addAll(existingAuthors);
+        }
 
-            Author author;
-            if (email != null && !email.isBlank()) {
-                // Find existing author by email or create new one
-                author = authorRepo.findByEmail(email).orElseGet(() -> {
-                    if (name == null || name.isBlank()) {
+        // 2. Resolve authors by Email/Info (Create if new)
+        if (request.getAuthors() != null && !request.getAuthors().isEmpty()) {
+            for (BookCreateRequest.AuthorInfo authorInfo : request.getAuthors()) {
+                String email = authorInfo.getEmail();
+                if (email == null || email.isBlank()) {
+                    throw new IllegalArgumentException("Author email cannot be blank");
+                }
+
+                // Find existing author or create new one
+                Author author = authorRepo.findByEmail(email).orElseGet(() -> {
+                    if (authorInfo.getName() == null || authorInfo.getName().isBlank()) {
                         throw new IllegalArgumentException(
                                 "Author name is required for new author with email: " + email);
                     }
                     Author newAuthor = new Author();
                     newAuthor.setEmail(email);
-                    newAuthor.setName(name);
+                    newAuthor.setName(authorInfo.getName());
                     return authorRepo.save(newAuthor);
                 });
-            } else {
-                // No email provided, must have name
-                if (name == null || name.isBlank()) {
-                    throw new IllegalArgumentException("Author name is required");
-                }
 
-                // Create new author with just name
-                // Note: We are not de-duplicating by name here to allow same names
-                // in case they are different people (no email ID to distinguish)
-                Author newAuthor = new Author();
-                newAuthor.setName(name);
-                newAuthor.setEmail(null);
-                author = authorRepo.save(newAuthor);
+                authors.add(author);
             }
+        }
 
-            authors.add(author);
+        if (authors.isEmpty()) {
+            throw new NoAuthorFoundException("At least one valid author is required (via ID or Email)");
         }
 
         // Create the book

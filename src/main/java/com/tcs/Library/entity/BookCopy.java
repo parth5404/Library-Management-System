@@ -1,5 +1,6 @@
 package com.tcs.Library.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.tcs.Library.enums.BookStatus;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -29,11 +30,13 @@ public class BookCopy {
     @Enumerated(EnumType.STRING)
     private BookStatus status = BookStatus.AVAILABLE;
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "book_id", nullable = false)
     @JsonIgnore
     private Book book;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "current_user_id")
     @JsonIgnore
