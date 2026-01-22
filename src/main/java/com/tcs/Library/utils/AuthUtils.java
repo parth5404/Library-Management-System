@@ -1,14 +1,13 @@
 
 package com.tcs.Library.utils;
 
-import com.tcs.Library.entity.User;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthoritiesContainer;
+
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
@@ -40,7 +39,7 @@ public class AuthUtils {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String generateAccessToken(String username,
+    public String generateAccessToken(String username, String customerName, String userPublicId,
             Collection<? extends GrantedAuthority> authority) {
 
         List<String> roles = authority.stream().filter(Objects::nonNull)
@@ -50,6 +49,8 @@ public class AuthUtils {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", roles);
+        claims.put("customerName", customerName);
+        claims.put("userPublicId", userPublicId);
 
         Instant now = Instant.now();
         return Jwts.builder().subject(username).header().empty().add("type", "JWT").and()
@@ -59,10 +60,10 @@ public class AuthUtils {
     }
 
     // public String generateRefreshToken(User user) {
-    //     Instant now = Instant.now();
-    //     return Jwts.builder().subject(user.getUsername()).issuedAt(Date.from(now))
-    //             .expiration(Date.from(now.plus(refreshExpDays, ChronoUnit.DAYS)))
-    //             .claim("type", "refresh").signWith(getSigningKey()).compact();
+    // Instant now = Instant.now();
+    // return Jwts.builder().subject(user.getUsername()).issuedAt(Date.from(now))
+    // .expiration(Date.from(now.plus(refreshExpDays, ChronoUnit.DAYS)))
+    // .claim("type", "refresh").signWith(getSigningKey()).compact();
     // }
 
     public String extractUsername(String token) {

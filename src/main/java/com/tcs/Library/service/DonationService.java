@@ -2,6 +2,7 @@ package com.tcs.Library.service;
 
 import com.tcs.Library.dto.DonationApprovalRequest;
 import com.tcs.Library.dto.DonationRequest;
+import com.tcs.Library.dto.DonationResponse;
 import com.tcs.Library.entity.Book;
 import com.tcs.Library.entity.BookCopy;
 import com.tcs.Library.entity.BookDonation;
@@ -13,6 +14,8 @@ import com.tcs.Library.repository.BookCopyRepo;
 import com.tcs.Library.repository.BookDonationRepo;
 import com.tcs.Library.repository.BookRepo;
 import com.tcs.Library.repository.UserRepo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,12 +53,44 @@ public class DonationService {
         return donationRepo.save(donation);
     }
 
-    public List<BookDonation> getPendingDonations() {
-        return donationRepo.findByStatus(DonationStatus.PENDING);
+    public List<DonationResponse> getPendingDonations() {
+        List<BookDonation> donations = donationRepo.findByStatus(DonationStatus.PENDING);
+        return donations.stream()
+                .map(d -> new DonationResponse(
+                        d.getId(),
+                        d.getBookTitle(),
+                        d.getAuthor(),
+                        d.getQuantityOffered(),
+                        d.getQuantityApproved(),
+                        d.getStatus(),
+                        d.getAdminNotes(),
+                        d.getCreatedAt(),
+                        d.getProcessedAt()
+                ))
+                .toList();
     }
 
-    public List<BookDonation> getUserDonations(Long userId) {
-        return donationRepo.findByUserId(userId);
+    public List<DonationResponse> getUserDonations(UUID userPublicId) {
+        User user = userRepo.findByPublicId(userPublicId)
+                .orElseThrow(() -> new NoUserFoundException("User not found: " + userPublicId));
+        List<BookDonation> donations = donationRepo.findByUserId(user.getId());
+        return donations.stream()
+                .map(d -> new DonationResponse(
+                        d.getId(),
+                        d.getBookTitle(),
+                        d.getAuthor(),
+                        d.getQuantityOffered(),
+                        d.getQuantityApproved(),
+                        d.getStatus(),
+                        d.getAdminNotes(),
+                        d.getCreatedAt(),
+                        d.getProcessedAt()
+                ))
+                .toList();
+    }
+
+    public Page<BookDonation> getAllDonations(Pageable pageable) {
+        return donationRepo.findAll(pageable);
     }
 
     @Transactional

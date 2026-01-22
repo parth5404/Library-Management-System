@@ -275,6 +275,7 @@ public class UserValidations {
     }
 
     @RequiredArgsConstructor
+    @Getter
     public static class FieldError {
         @Getter
         private final String field;

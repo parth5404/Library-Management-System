@@ -6,7 +6,6 @@ import java.time.Clock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import com.tcs.Library.dto.LoginRequest;
 import com.tcs.Library.dto.LoginResponse;
@@ -43,10 +42,13 @@ public class AuthService {
 
         authManager.authenticate(authToken);
 
-        UserDetails userDetails = detailService.loadUserByUsername(req.getEmail());
+        com.tcs.Library.entity.User user = userDS.findByEmailIgnoreCase(req.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        String token = authUtils.generateAccessToken(userDetails.getUsername(),
-                userDetails.getAuthorities());
+        String token = authUtils.generateAccessToken(user.getUsername(),
+                user.getCustomerName(),
+                user.getPublicId().toString(),
+                user.getAuthorities());
 
         return new LoginResponse(token);
     }
@@ -79,7 +81,7 @@ public class AuthService {
      * Returns the secret question for the user
      */
     public String getSecretQuestion(String email) {
-        com.tcs.Library.entity.User user = userDS.findByEmail(email)
+        com.tcs.Library.entity.User user = userDS.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NoUserFoundException("No account found with email: " + email));
         return user.getSecretQuestion();
     }
@@ -89,7 +91,7 @@ public class AuthService {
      * Returns true if answer is correct
      */
     public boolean verifySecretAnswer(String email, String answer) {
-        com.tcs.Library.entity.User user = userDS.findByEmail(email)
+        com.tcs.Library.entity.User user = userDS.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NoUserFoundException("No account found with email: " + email));
 
         // Compare with hashed answer (case-insensitive, trimmed)
@@ -101,7 +103,7 @@ public class AuthService {
      * Returns true if password was reset successfully
      */
     public boolean resetPassword(String email, String secretAnswer, String newPassword) {
-        com.tcs.Library.entity.User user = userDS.findByEmail(email)
+        com.tcs.Library.entity.User user = userDS.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new NoUserFoundException("No account found with email: " + email));
 
         // Verify secret answer first
