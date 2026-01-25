@@ -6,6 +6,7 @@ import lombok.Setter;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.tcs.Library.enums.IssueStatus;
 
 @Getter
 @Setter
@@ -33,7 +34,8 @@ public class IssuedBooks {
     private LocalDate returnDate;
 
     @Column(nullable = false)
-    private String status; // BORROWED, RETURNED, OVERDUE
+    @Enumerated(EnumType.STRING)
+    private IssueStatus status; 
 
     @Column(precision = 10, scale = 2)
     private BigDecimal fineAmount = BigDecimal.ZERO;

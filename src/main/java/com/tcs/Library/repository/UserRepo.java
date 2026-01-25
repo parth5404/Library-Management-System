@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +28,8 @@ public interface UserRepo extends JpaRepository<User, Long> {
     long countByRole(@Param("role") Role role);
 
     long countByIsDefaulter(boolean isDefaulter);
+
+    List<User> findByTotalUnpaidFineGreaterThan(BigDecimal amount);
 
     // For admin user management - find users having a specific role
     @Query("SELECT DISTINCT u FROM User u JOIN u.roles r WHERE r = :role")

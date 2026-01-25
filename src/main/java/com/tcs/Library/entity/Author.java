@@ -12,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
@@ -24,8 +25,8 @@ public class Author {
     @jakarta.persistence.Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "author_id")
-    private Long Id;
-    @Column(name = "author_name")
+    private Long id;
+    @Column(name = "author_name", unique = true, nullable = false, updatable = false)
     private String name;
     @Column(name = "email", unique = true)
     private String email;
@@ -44,6 +45,12 @@ public class Author {
         }
     }
 
+    @PrePersist
+    public void normalizeName() {
+        if (name != null) {
+            name = name.trim().toLowerCase();
+        }
+    }
     /**
      * Returns the count of books associated with this author.
      * This is a computed property that is included in JSON responses.

@@ -15,6 +15,7 @@ public interface AuthorRepo extends JpaRepository<Author, Long> {
 
     /** Find author by public ID */
     Optional<Author> findByPublicId(String publicId);
+    Optional<Author> findByName(String name);
 
     /** Find authors by list of public IDs */
     List<Author> findByPublicIdIn(java.util.Collection<String> publicIds);

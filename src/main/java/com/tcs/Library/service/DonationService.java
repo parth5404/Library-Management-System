@@ -47,7 +47,6 @@ public class DonationService {
         donation.setAuthor(request.getAuthor());
         donation.setQuantityOffered(request.getQuantityOffered());
         donation.setStatus(DonationStatus.PENDING);
-
         log.info("Donation submitted by user {}: {} copies of '{}'",
                 user.getEmail(), request.getQuantityOffered(), request.getBookTitle());
         return donationRepo.save(donation);
@@ -129,7 +128,6 @@ public class DonationService {
                 copy.setStatus(BookStatus.AVAILABLE);
                 bookCopyRepo.save(copy);
             }
-
             // Update total copies count
             book.setTotalCopies(book.getTotalCopies() + request.getQuantityApproved());
             bookRepo.save(book);

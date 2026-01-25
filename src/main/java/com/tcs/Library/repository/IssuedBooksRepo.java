@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import com.tcs.Library.enums.BookType;
+import com.tcs.Library.enums.IssueStatus;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -17,7 +18,7 @@ import org.springframework.data.repository.query.Param;
 public interface IssuedBooksRepo extends JpaRepository<IssuedBooks, Long> {
 
         // Find active borrow for a specific book copy
-        Optional<IssuedBooks> findByBookCopyIdAndStatus(Long bookCopyId, String status);
+        Optional<IssuedBooks> findByBookCopyIdAndStatus(Long bookCopyId, IssueStatus status);
 
         // Check if user already has this book type borrowed
         @Query("SELECT COUNT(ib) > 0 FROM IssuedBooks ib WHERE ib.user.id = :userId AND ib.bookCopy.book.id = :bookId AND ib.status = 'BORROWED'")
@@ -28,7 +29,7 @@ public interface IssuedBooksRepo extends JpaRepository<IssuedBooks, Long> {
         Optional<IssuedBooks> findActiveByUserAndBook(@Param("userId") Long userId, @Param("bookId") Long bookId);
 
         // Find all active borrows for a user
-        List<IssuedBooks> findByUserIdAndStatus(Long userId, String status);
+        List<IssuedBooks> findByUserIdAndStatus(Long userId, IssueStatus status);
 
         // Find all borrows for a user (history)
         List<IssuedBooks> findByUserId(Long userId);
@@ -46,18 +47,18 @@ public interface IssuedBooksRepo extends JpaRepository<IssuedBooks, Long> {
         List<IssuedBooks> findSeverelyOverdueBooks(@Param("cutoffDate") LocalDate cutoffDate);
 
         // Get all active borrows
-        List<IssuedBooks> findByStatus(String status);
+        List<IssuedBooks> findByStatus(IssueStatus status);
 
         // Count active borrows for a user
-        int countByUserIdAndStatus(Long userId, String status);
+        int countByUserIdAndStatus(Long userId, IssueStatus status);
 
         // For dashboard stats
-        long countByStatus(String status);
+        long countByStatus(IssueStatus status);
 
         @Query("SELECT COUNT(ib) FROM IssuedBooks ib WHERE ib.status = 'BORROWED' AND ib.dueDate < :today")
         long countOverdueBooks(@Param("today") LocalDate today);
 
-        long countByIssueDateAndStatus(LocalDate issueDate, String status);
+        long countByIssueDateAndStatus(LocalDate issueDate, IssueStatus status);
 
         long countByReturnDate(LocalDate returnDate);
 

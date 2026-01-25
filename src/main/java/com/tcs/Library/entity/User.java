@@ -45,7 +45,7 @@ public class User implements UserDetails {
     private String passwordHash;
     private String secretQuestion;
     @JsonIgnore
-    private String secretAnswerHash; // Hashed for security
+    private String secretAnswerHash;
 
     @Column(nullable = false)
     private boolean isDefaulter = false;
@@ -103,7 +103,6 @@ public class User implements UserDetails {
         return true;
     }
 
-    // Custom getter for isDefaulter (Lombok generates isIsDefaulter)
     public boolean isDefaulter() {
         return isDefaulter;
     }

@@ -12,6 +12,7 @@ import com.tcs.Library.dto.ApiResponse;
 import com.tcs.Library.dto.UserProfileResponse;
 import com.tcs.Library.dto.UserUpdateRequest;
 import com.tcs.Library.entity.User;
+import com.tcs.Library.enums.IssueStatus;
 import com.tcs.Library.repository.IssuedBooksRepo;
 import com.tcs.Library.repository.UserRepo;
 
@@ -74,7 +75,7 @@ public class ProfileController {
      * Build profile response from user entity.
      */
     private UserProfileResponse buildProfileResponse(User user) {
-        int currentBorrows = issuedBooksRepo.countByUserIdAndStatus(user.getId(), "BORROWED");
+        int currentBorrows = issuedBooksRepo.countByUserIdAndStatus(user.getId(), IssueStatus.BORROWED);
         int totalHistory = issuedBooksRepo.findByUserId(user.getId()).size();
         int overdueCount = issuedBooksRepo.findOverdueBooksForUser(user.getId(), LocalDate.now()).size();
 

@@ -1,10 +1,10 @@
 package com.tcs.Library.dto;
+
 import java.time.LocalDate;
 import lombok.*;
 
 @Data
 public class UserRegRequest {
-    private String id;
     private String customerName;
     private String email;
     private String countryCode;
@@ -21,4 +21,3 @@ public class UserRegRequest {
     private String secretQuestion;
     private String secretAnswer;
 }
-

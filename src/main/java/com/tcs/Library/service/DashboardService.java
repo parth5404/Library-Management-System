@@ -9,6 +9,7 @@ import com.tcs.Library.dto.DashboardStats;
 import com.tcs.Library.enums.BookStatus;
 import com.tcs.Library.enums.ComplaintStatus;
 import com.tcs.Library.enums.DonationStatus;
+import com.tcs.Library.enums.IssueStatus;
 import com.tcs.Library.enums.Role;
 import com.tcs.Library.repository.*;
 
@@ -52,10 +53,11 @@ public class DashboardService {
                                 .defaulterUsers(userRepo.countByIsDefaulter(true))
 
                                 // Borrow stats
-                                .activeLoans(issuedBooksRepo.countByStatus("BORROWED"))
+                                .activeLoans(issuedBooksRepo.countByStatus(IssueStatus.BORROWED))
                                 .overdueBooks(issuedBooksRepo.countOverdueBooks(today))
-                                .totalLoansToday(issuedBooksRepo.countByIssueDateAndStatus(today, "BORROWED")
-                                                + issuedBooksRepo.countByIssueDateAndStatus(today, "RETURNED"))
+                                .totalLoansToday(issuedBooksRepo.countByIssueDateAndStatus(today, IssueStatus.BORROWED)
+                                                + issuedBooksRepo.countByIssueDateAndStatus(today,
+                                                                IssueStatus.RETURNED))
                                 .totalReturnsToday(issuedBooksRepo.countByReturnDate(today))
 
                                 // Fine stats
@@ -92,7 +94,7 @@ public class DashboardService {
 
                 return DashboardStats.builder()
                                 .totalBooks(bookRepo.count())
-                                .activeLoans(issuedBooksRepo.countByStatus("BORROWED"))
+                                .activeLoans(issuedBooksRepo.countByStatus(IssueStatus.BORROWED))
                                 .overdueBooks(issuedBooksRepo.countOverdueBooks(today))
                                 .pendingComplaints(complaintRepo.countByStatus(ComplaintStatus.PENDING))
                                 .totalUnpaidFines(
