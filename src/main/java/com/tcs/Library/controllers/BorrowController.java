@@ -26,7 +26,7 @@ public class BorrowController {
      * Issue a book to a user (Staff/Admin only).
      */
     @PostMapping("/issue")
-    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<IssuedBooks>> issueBook(@RequestBody IssueBookRequest request) {
         IssuedBooks issued = borrowService.issueBook(request);
         return ResponseEntity.ok(ApiResponse.success("Book issued successfully", issued));
@@ -46,7 +46,7 @@ public class BorrowController {
      * Return a book by issue record ID (Staff/Admin only).
      */
     @PostMapping("/return/record/{recordId}")
-    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('USER', 'STAFF', 'ADMIN')")
     public ResponseEntity<ApiResponse<IssuedBooks>> returnBookByRecord(@PathVariable Long recordId) {
         IssuedBooks returned = borrowService.returnBookByRecordId(recordId);
         return ResponseEntity.ok(ApiResponse.success("Book returned successfully", returned));
@@ -61,7 +61,17 @@ public class BorrowController {
             @PathVariable String bookPublicId,
             @AuthenticationPrincipal User user) {
         IssuedBooks returned = borrowService.returnBookByUser(user, bookPublicId);
-        return ResponseEntity.ok(ApiResponse.success("Book returned successfully", returned));
+        return ResponseEntity.ok(ApiResponse.success("Return initiated successfully. Pending approval.", returned));
+    }
+
+    /**
+     * Approve a return request (Admin/Staff only).
+     */
+    @PostMapping("/return/approve/{recordId}")
+    @PreAuthorize("hasAnyRole('STAFF', 'ADMIN')")
+    public ResponseEntity<ApiResponse<IssuedBooks>> approveReturn(@PathVariable Long recordId) {
+        IssuedBooks returned = borrowService.approveReturn(recordId);
+        return ResponseEntity.ok(ApiResponse.success("Return approved and processed successfully", returned));
     }
 
     /**

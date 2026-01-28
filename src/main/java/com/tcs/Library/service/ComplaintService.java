@@ -129,11 +129,53 @@ public class ComplaintService {
     /**
      * Get all pending and escalated complaints for admin.
      */
-    public Page<ComplaintResponse> getAdminComplaints(Pageable pageable) {
-        List<ComplaintStatus> adminStatuses = Arrays.asList(
-                ComplaintStatus.PENDING,
-                ComplaintStatus.ESCALATED_TO_ADMIN);
-        return complaintRepo.findByStatusIn(adminStatuses, pageable)
+    /**
+     * Get all pending and escalated complaints for admin.
+     */
+    public Page<ComplaintResponse> getAdminComplaints(String searchTerm,
+            String categoryStr,
+            String statusStr,
+            String startDateStr,
+            String endDateStr,
+            Pageable pageable) {
+        com.tcs.Library.enums.ComplaintCategory category = null;
+        if (categoryStr != null && !categoryStr.isEmpty()) {
+            try {
+                category = com.tcs.Library.enums.ComplaintCategory.valueOf(categoryStr);
+            } catch (IllegalArgumentException e) {
+                // Ignore
+            }
+        }
+
+        ComplaintStatus status = null;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                status = ComplaintStatus.valueOf(statusStr);
+            } catch (IllegalArgumentException e) {
+                // Ignore
+            }
+        }
+
+        LocalDateTime startDate = null;
+        if (startDateStr != null && !startDateStr.isEmpty()) {
+            startDate = java.time.LocalDate.parse(startDateStr).atStartOfDay();
+        }
+
+        LocalDateTime endDate = null;
+        if (endDateStr != null && !endDateStr.isEmpty()) {
+            endDate = java.time.LocalDate.parse(endDateStr).atTime(23, 59, 59);
+        }
+
+        List<ComplaintStatus> statuses;
+        if (status != null) {
+            statuses = Arrays.asList(status);
+        } else {
+            statuses = Arrays.asList(
+                    ComplaintStatus.PENDING,
+                    ComplaintStatus.ESCALATED_TO_ADMIN);
+        }
+
+        return complaintRepo.findAllWithFilters(searchTerm, category, statuses, startDate, endDate, pageable)
                 .map(ComplaintMapper::toResponse);
     }
 
@@ -186,64 +228,19 @@ public class ComplaintService {
     private ComplaintResponse rejectByStaff(Complaint complaint, User staff,
             ComplaintActionRequest request, boolean isSecondStaff) {
 
-        if (isSecondStaff) {
-            // Second staff rejecting - escalate to admin
-            complaint.setSecondStaffRejected(true);
-            complaint.setSecondStaffResponse(request.getResponse());
-            complaint.setStatus(ComplaintStatus.ESCALATED_TO_ADMIN);
-            complaint.setRejectionReason(request.getNotes());
+        // Any staff rejecting - escalate to admin immediately
+        complaint.setStaffResponse(request.getResponse());
+        complaint.setStatus(ComplaintStatus.ESCALATED_TO_ADMIN);
+        complaint.setRejectionReason(request.getNotes());
 
-            // Auto-assign to an admin
-            autoAssignToAdmin(complaint);
+        // Auto-assign to an admin
+        autoAssignToAdmin(complaint);
 
-            log.info("Complaint {} escalated to admin after second staff rejection",
-                    complaintId(complaint));
-        } else {
-            // First staff rejecting - assign to another staff
-            complaint.setFirstStaffRejected(true);
-            complaint.setStaffResponse(request.getResponse());
-            complaint.setStatus(ComplaintStatus.REJECTED_FIRST);
-
-            // Find another staff member
-            assignToSecondStaff(complaint, staff);
-        }
+        log.info("Complaint {} rejected by staff {} and escalated to admin",
+                complaintId(complaint), staff.getEmail());
 
         Complaint saved = complaintRepo.save(complaint);
         return ComplaintMapper.toResponse(saved);
-    }
-
-    /**
-     * Assign to a second staff member after first rejection.
-     */
-    private void assignToSecondStaff(Complaint complaint, User firstStaff) {
-        List<User> staffMembers = userRepo.findAll().stream()
-                .filter(u -> u.getRoles().contains(Role.STAFF))
-                .filter(u -> !u.getId().equals(firstStaff.getId())) // Exclude first staff
-                .toList();
-
-        if (staffMembers.isEmpty()) {
-            // No other staff available, escalate to admin
-            complaint.setStatus(ComplaintStatus.ESCALATED_TO_ADMIN);
-            autoAssignToAdmin(complaint);
-            log.warn("No second staff available, escalating complaint {} to admin",
-                    complaintId(complaint));
-            return;
-        }
-
-        // Find staff with least active complaints
-        User secondStaff = staffMembers.stream()
-                .min((s1, s2) -> {
-                    long count1 = complaintRepo.countActiveComplaintsByStaff(s1, ACTIVE_STATUSES);
-                    long count2 = complaintRepo.countActiveComplaintsByStaff(s2, ACTIVE_STATUSES);
-                    return Long.compare(count1, count2);
-                })
-                .orElse(staffMembers.get(0));
-
-        complaint.setSecondAssignedStaff(secondStaff);
-        complaint.setStatus(ComplaintStatus.ASSIGNED);
-
-        log.info("Complaint {} assigned to second staff: {}",
-                complaintId(complaint), secondStaff.getEmail());
     }
 
     /**
@@ -298,10 +295,47 @@ public class ComplaintService {
     }
 
     /**
-     * Get all complaints (admin only).
+     * Get all complaints (admin only) with optional filters.
      */
-    public Page<ComplaintResponse> getAllComplaints(Pageable pageable) {
-        return complaintRepo.findAll(pageable).map(ComplaintMapper::toResponse);
+    public Page<ComplaintResponse> getAllComplaints(String searchTerm,
+            String categoryStr,
+            String statusStr,
+            String startDateStr,
+            String endDateStr,
+            Pageable pageable) {
+
+        com.tcs.Library.enums.ComplaintCategory category = null;
+        if (categoryStr != null && !categoryStr.isEmpty()) {
+            try {
+                category = com.tcs.Library.enums.ComplaintCategory.valueOf(categoryStr);
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid category
+            }
+        }
+
+        ComplaintStatus status = null;
+        if (statusStr != null && !statusStr.isEmpty()) {
+            try {
+                status = ComplaintStatus.valueOf(statusStr);
+            } catch (IllegalArgumentException e) {
+                // Ignore invalid status
+            }
+        }
+
+        LocalDateTime startDate = null;
+        if (startDateStr != null && !startDateStr.isEmpty()) {
+            startDate = java.time.LocalDate.parse(startDateStr).atStartOfDay();
+        }
+
+        LocalDateTime endDate = null;
+        if (endDateStr != null && !endDateStr.isEmpty()) {
+            endDate = java.time.LocalDate.parse(endDateStr).atTime(23, 59, 59);
+        }
+
+        List<ComplaintStatus> statuses = (status != null) ? Arrays.asList(status) : null;
+
+        return complaintRepo.findAllWithFilters(searchTerm, category, statuses, startDate, endDate, pageable)
+                .map(ComplaintMapper::toResponse);
     }
 
     /**
@@ -323,6 +357,38 @@ public class ComplaintService {
 
         complaint.setStatus(ComplaintStatus.IN_PROGRESS);
         Complaint saved = complaintRepo.save(complaint);
+        return ComplaintMapper.toResponse(saved);
+    }
+
+    /**
+     * Manually assign a complaint to a specific staff member.
+     */
+    @Transactional
+    public ComplaintResponse assignComplaintToStaff(String complaintId, java.util.UUID staffPublicId) {
+        Complaint complaint = complaintRepo.findByComplaintId(complaintId)
+                .orElseThrow(() -> new ComplaintNotFoundException(complaintId));
+
+        User staff = userRepo.findByPublicId(staffPublicId)
+                .orElseThrow(() -> new com.tcs.Library.error.NoUserFoundException("Staff not found: " + staffPublicId));
+
+        if (!staff.getRoles().contains(Role.STAFF)) {
+            throw new IllegalArgumentException("User is not a staff member");
+        }
+
+        complaint.setAssignedStaff(staff);
+
+        // Reset rejection workflow if applicable
+        complaint.setFirstStaffRejected(false);
+        complaint.setSecondStaffRejected(false);
+        complaint.setSecondAssignedStaff(null);
+        complaint.setAssignedAdmin(null);
+
+        complaint.setStatus(ComplaintStatus.ASSIGNED);
+        complaint.setAssignedAt(LocalDateTime.now());
+
+        Complaint saved = complaintRepo.save(complaint);
+        log.info("Complaint {} manually assigned to staff: {} by admin", complaintId, staff.getEmail());
+
         return ComplaintMapper.toResponse(saved);
     }
 

@@ -2,6 +2,8 @@ package com.tcs.Library.service;
 
 import com.tcs.Library.dto.DonationApprovalRequest;
 import com.tcs.Library.dto.DonationRequest;
+import com.tcs.Library.dto.DonationResponse;
+import com.tcs.Library.entity.Author;
 import com.tcs.Library.entity.Book;
 import com.tcs.Library.entity.BookCopy;
 import com.tcs.Library.entity.BookDonation;
@@ -9,10 +11,13 @@ import com.tcs.Library.entity.User;
 import com.tcs.Library.enums.BookStatus;
 import com.tcs.Library.enums.DonationStatus;
 import com.tcs.Library.error.NoUserFoundException;
+import com.tcs.Library.repository.AuthorRepo;
 import com.tcs.Library.repository.BookCopyRepo;
 import com.tcs.Library.repository.BookDonationRepo;
 import com.tcs.Library.repository.BookRepo;
 import com.tcs.Library.repository.UserRepo;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -31,6 +37,7 @@ public class DonationService {
     private final BookRepo bookRepo;
     private final BookCopyRepo bookCopyRepo;
     private final UserRepo userRepo;
+    private final AuthorRepo authorRepo;
 
     @Transactional
     public BookDonation submitDonation(UUID userPublicId, DonationRequest request) {
@@ -49,12 +56,44 @@ public class DonationService {
         return donationRepo.save(donation);
     }
 
-    public List<BookDonation> getPendingDonations() {
-        return donationRepo.findByStatus(DonationStatus.PENDING);
+    public List<DonationResponse> getPendingDonations() {
+        List<BookDonation> donations = donationRepo.findByStatus(DonationStatus.PENDING);
+        return donations.stream()
+                .map(d -> new DonationResponse(
+                        d.getId(),
+                        d.getUser().getCustomerName(),
+                        d.getBookTitle(),
+                        d.getAuthor(),
+                        d.getQuantityOffered(),
+                        d.getQuantityApproved(),
+                        d.getStatus(),
+                        d.getAdminNotes(),
+                        d.getCreatedAt(),
+                        d.getProcessedAt()))
+                .toList();
     }
 
-    public List<BookDonation> getUserDonations(Long userId) {
-        return donationRepo.findByUserId(userId);
+    public List<DonationResponse> getUserDonations(UUID userPublicId) {
+        User user = userRepo.findByPublicId(userPublicId)
+                .orElseThrow(() -> new NoUserFoundException("User not found: " + userPublicId));
+        List<BookDonation> donations = donationRepo.findByUserId(user.getId());
+        return donations.stream()
+                .map(d -> new DonationResponse(
+                        d.getId(),
+                        user.getCustomerName(),
+                        d.getBookTitle(),
+                        d.getAuthor(),
+                        d.getQuantityOffered(),
+                        d.getQuantityApproved(),
+                        d.getStatus(),
+                        d.getAdminNotes(),
+                        d.getCreatedAt(),
+                        d.getProcessedAt()))
+                .toList();
+    }
+
+    public Page<BookDonation> getAllDonations(Pageable pageable) {
+        return donationRepo.findAll(pageable);
     }
 
     @Transactional
@@ -78,13 +117,31 @@ public class DonationService {
 
         // Create book and copies if quantity > 0
         if (request.getQuantityApproved() > 0) {
-            Book book = bookRepo.findByBookTitleIgnoreCase(donation.getBookTitle())
+            Book book = bookRepo.findByBookTitleIgnoreCaseAndAuthorNameIgnoreCase(donation.getBookTitle(), donation.getAuthor())
                     .orElseGet(() -> {
                         Book newBook = new Book();
                         newBook.setBookTitle(donation.getBookTitle());
+                        newBook.setAuthorName(donation.getAuthor());
                         newBook.setTotalCopies(0);
                         return bookRepo.save(newBook);
                     });
+
+            // Handle Author mapping
+            // if (donation.getAuthor() != null && !donation.getAuthor().trim().isEmpty()) {
+            //     String authorName = donation.getAuthor().trim();
+            //     Author author = authorRepo.findByNameIgnoreCase(authorName)
+            //             .orElseGet(() -> {
+            //                 Author newAuthor = new Author();
+            //                 newAuthor.setName(authorName);
+            //                 return authorRepo.save(newAuthor);
+            //             });
+
+            //     if (book.getAuthors() == null) {
+            //         book.setAuthors(new java.util.HashSet<>());
+            //     }
+            //     book.getAuthors().add(author);
+            //     bookRepo.save(book);
+            // }
 
             // Add copies
             for (int i = 0; i < request.getQuantityApproved(); i++) {

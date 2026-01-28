@@ -38,10 +38,10 @@ public class BorrowService {
         User user = userRepo.findByPublicId(request.getUserPublicId())
                 .orElseThrow(() -> new NoUserFoundException("User not found: " + request.getUserPublicId()));
 
-        // 2. Check if user is a defaulter
+        // 2. Check if user is a defaulter - block borrowing if flagged
         if (user.isDefaulter()) {
             throw new UserIsDefaulterException(
-                    "User is a defaulter and cannot borrow books. Please pay pending fines.");
+                    "User is marked as a defaulter. Please contact library administration to resolve this issue before borrowing books.");
         }
 
         // 3. Check if user has unpaid fines
@@ -140,6 +140,26 @@ public class BorrowService {
                 .orElseThrow(() -> new InvalidBookOperationException(
                         "You don't have an active borrow for: " + book.getBookTitle()));
 
+        // Change: Instead of processing return immediately, set status to
+        // RETURN_INITIATED
+        record.setStatus("RETURN_INITIATED");
+        log.info("Return initiated for book: {} by user: {}", book.getBookTitle(), user.getEmail());
+        return issuedBooksRepo.save(record);
+    }
+
+    /**
+     * Approve a return request (Admin only).
+     */
+    @Transactional
+    public IssuedBooks approveReturn(Long recordId) {
+        IssuedBooks record = issuedBooksRepo.findById(recordId)
+                .orElseThrow(() -> new InvalidBookOperationException("Borrow record not found: " + recordId));
+
+        if (!"RETURN_INITIATED".equals(record.getStatus())) {
+            throw new InvalidBookOperationException(
+                    "Return has not been initiated for this book. Current status: " + record.getStatus());
+        }
+
         BookCopy copy = record.getBookCopy();
         return processReturn(record, copy);
     }
@@ -148,7 +168,7 @@ public class BorrowService {
      * Get all currently borrowed books for a user.
      */
     public List<IssuedBooks> getUserBorrowedBooks(User user) {
-        return issuedBooksRepo.findByUserIdAndStatus(user.getId(), "BORROWED");
+        return issuedBooksRepo.findByUserIdAndStatusIn(user.getId(), List.of("BORROWED", "RETURN_INITIATED"));
     }
 
     /**
@@ -210,24 +230,97 @@ public class BorrowService {
     }
 
     public void checkAndUpdateDefaulterStatus(User user) {
+        boolean shouldBeDefaulter = false;
+
         // Mark as defaulter if unpaid fine exceeds threshold
         if (user.getTotalUnpaidFine().compareTo(DEFAULTER_FINE_THRESHOLD) > 0) {
-            user.setDefaulter(true);
-            log.warn("User {} marked as defaulter due to high unpaid fines: ₹{}",
-                    user.getEmail(), user.getTotalUnpaidFine());
+            shouldBeDefaulter = true;
+            if (!user.isDefaulter()) {
+                log.warn("User {} marked as defaulter due to high unpaid fines: ₹{}",
+                        user.getEmail(), user.getTotalUnpaidFine());
+            }
         }
 
         // Also check for severely overdue books
-        LocalDate cutoffDate = LocalDate.now().minusDays(DEFAULTER_OVERDUE_DAYS);
-        var overdueBooks = issuedBooksRepo.findByUserIdAndStatus(user.getId(), "BORROWED")
-                .stream()
-                .filter(ib -> ib.getDueDate().isBefore(cutoffDate))
-                .toList();
+        if (!shouldBeDefaulter) {
+            LocalDate cutoffDate = LocalDate.now().minusDays(DEFAULTER_OVERDUE_DAYS);
+            var overdueBooks = issuedBooksRepo.findByUserIdAndStatus(user.getId(), "BORROWED")
+                    .stream()
+                    .filter(ib -> ib.getDueDate().isBefore(cutoffDate))
+                    .toList();
 
-        if (!overdueBooks.isEmpty()) {
-            user.setDefaulter(true);
-            log.warn("User {} marked as defaulter due to {} books overdue by 30+ days",
-                    user.getEmail(), overdueBooks.size());
+            if (!overdueBooks.isEmpty()) {
+                shouldBeDefaulter = true;
+                if (!user.isDefaulter()) {
+                    log.warn("User {} marked as defaulter due to {} books overdue by 30+ days",
+                            user.getEmail(), overdueBooks.size());
+                }
+            }
         }
+
+        // Update status if changed
+        if (user.isDefaulter() != shouldBeDefaulter) {
+            user.setDefaulter(shouldBeDefaulter);
+            if (!shouldBeDefaulter) {
+                log.info("User {} no longer meets defaulter criteria.", user.getEmail());
+            }
+        }
+    }
+
+    /**
+     * Get active borrows for a specific book (Admin/Staff only).
+     */
+    public List<IssuedBooks> getActiveBorrowsForBook(Long bookId) {
+        return issuedBooksRepo.findActiveBorrowsByBookId(bookId);
+    }
+
+    /**
+     * Check if a book has any active borrows.
+     */
+    public boolean hasActiveBorrows(Long bookId) {
+        return issuedBooksRepo.existsActiveBorrowsForBook(bookId);
+    }
+
+    public boolean hasActiveBorrowsForUser(Long userId) {
+        return issuedBooksRepo.countByUserIdAndStatus(userId, "BORROWED") > 0;
+    }
+
+    /**
+     * Get all borrowed books (current and historical) with pagination.
+     * Used for Admin Borrowed Books page.
+     */
+    /**
+     * Get all borrowed books (current and historical) with pagination.
+     * Used for Admin Borrowed Books page.
+     */
+    public org.springframework.data.domain.Page<IssuedBooks> getAllBorrowedBooks(
+            org.springframework.data.domain.Pageable pageable) {
+        return issuedBooksRepo.findAll(pageable);
+    }
+
+    /**
+     * Get all borrowed books with filters and pagination.
+     */
+    public org.springframework.data.domain.Page<IssuedBooks> getAllBorrowedBooksWithFilters(
+            String memberName, String category, String status, LocalDate startDate, LocalDate endDate,
+            org.springframework.data.domain.Pageable pageable) {
+
+        com.tcs.Library.enums.BookType bookType = null;
+        if (category != null && !category.trim().isEmpty()) {
+            try {
+                bookType = com.tcs.Library.enums.BookType.valueOf(category.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid category filter: {}", category);
+            }
+        }
+        return issuedBooksRepo.findAllWithFilters(memberName, bookType, status, startDate, endDate, pageable);
+    }
+
+    /**
+     * Get all currently borrowed books (not returned) with pagination.
+     */
+    public org.springframework.data.domain.Page<IssuedBooks> getAllActiveBorrowedBooks(
+            org.springframework.data.domain.Pageable pageable) {
+        return issuedBooksRepo.findByStatusIn(List.of("BORROWED", "OVERDUE"), pageable);
     }
 }

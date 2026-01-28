@@ -33,8 +33,14 @@ public class BookCreateRequest {
 
     private String coverUrl;
 
+    private String description;
+
     @Positive(message = "Quantity must be positive")
     private int quantity = 1;
+
+    // private String authorName;
+
+    // private String authorEmail;
 
     /**
      * Set of author public IDs. Use this to link existing authors.
@@ -55,7 +61,6 @@ public class BookCreateRequest {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class AuthorInfo {
-        @NotBlank(message = "Author email is required")
         private String email;
 
         /** Name is optional if author already exists */

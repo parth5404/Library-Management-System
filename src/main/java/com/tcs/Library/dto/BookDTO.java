@@ -2,7 +2,6 @@
 package com.tcs.Library.dto;
 
 import java.util.Set;
-import com.tcs.Library.entity.Author;
 import com.tcs.Library.enums.BookType;
 
 import lombok.AllArgsConstructor;
@@ -22,5 +21,6 @@ public class BookDTO {
     private String coverUrl;
     private int quantity;
     private Set<Long> authorId;
+    private String authorName;
+    private String authorEmail;
 }
-

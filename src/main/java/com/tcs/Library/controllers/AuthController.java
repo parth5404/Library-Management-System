@@ -23,7 +23,7 @@ public class AuthController {
         try {
             return ResponseEntity.ok(authService.login(loginRequest));
         } catch (BadCredentialsException ex) {
-            return ResponseEntity.badRequest().body("Incorrect Credentials");
+            return ResponseEntity.badRequest().body(ApiResponse.error("Incorrect Credentials"));
         }
     }
 
@@ -41,10 +41,13 @@ public class AuthController {
      */
     @PostMapping("/forgot-password")
     public ResponseEntity<SecretQuestionResponse> forgotPassword(@RequestBody ForgotPasswordRequest request) {
+        System.out.println("Forgot Password Request for email: " + request.getEmail());
         try {
             String question = authService.getSecretQuestion(request.getEmail());
             return ResponseEntity.ok(SecretQuestionResponse.success(request.getEmail(), question));
         } catch (Exception ex) {
+            System.out.println("Error in forgotPassword: " + ex.getMessage());
+            ex.printStackTrace();
             return ResponseEntity.badRequest().body(SecretQuestionResponse.error(ex.getMessage()));
         }
     }
